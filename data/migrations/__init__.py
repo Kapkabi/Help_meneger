@@ -1,4 +1,4 @@
-from . import migration_0001_initial, migration_0002_units
+from . import migration_0001_initial, migration_0002_units, migration_0003_recipe_is_synced
 
 # Ordered list of migrations, applied in sequence based on VERSION.
 # To add a new migration: create migration_00NN_description.py with a
@@ -6,4 +6,5 @@ from . import migration_0001_initial, migration_0002_units
 ALL_MIGRATIONS = [
     migration_0001_initial,
     migration_0002_units,
+    migration_0003_recipe_is_synced,
 ]

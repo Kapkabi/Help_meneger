@@ -29,7 +29,12 @@ def test_migration_creates_expected_tables(db):
 
 def test_migration_records_schema_version(db):
     version = db.connection.execute("SELECT MAX(version) FROM schema_version").fetchone()[0]
-    assert version == 2
+    assert version == 3
+
+
+def test_recipes_have_is_synced_column(db):
+    columns = {row[1] for row in db.connection.execute("PRAGMA table_info(recipes)")}
+    assert "is_synced" in columns
 
 
 def test_builtin_categories_seeded(db):
@@ -51,7 +56,7 @@ def test_migration_is_idempotent(tmp_path):
     second = Database(db_path=db_path)
     second.connect()
     version = second.connection.execute("SELECT MAX(version) FROM schema_version").fetchone()[0]
-    assert version == 2
+    assert version == 3
     second.close()
 
 
