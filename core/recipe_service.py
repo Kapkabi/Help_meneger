@@ -27,7 +27,7 @@ class RecipeService:
     def list_units(self) -> List[str]:
         return self.recipe_repo.units.list_all()
 
-    def get_recipe(self, recipe_id: int) -> Optional[Recipe]:
+    def get_recipe(self, recipe_id: str) -> Optional[Recipe]:
         return self.recipe_repo.get_by_id(recipe_id)
 
     def search_recipes(
@@ -48,7 +48,7 @@ class RecipeService:
         category_name: str,
         photo_path: Optional[str],
         ingredients: List[RecipeIngredient],
-    ) -> int:
+    ) -> str:
         cook_time = self._validate(title, steps, cook_time_minutes, ingredients)
         category = self.category_repo.get_or_create(category_name) if category_name else None
         recipe = Recipe(
@@ -64,7 +64,7 @@ class RecipeService:
 
     def update_recipe(
         self,
-        recipe_id: int,
+        recipe_id: str,
         title: str,
         steps: str,
         cook_time_minutes,
@@ -85,7 +85,7 @@ class RecipeService:
         )
         self.recipe_repo.update(recipe)
 
-    def delete_recipe(self, recipe_id: int) -> None:
+    def delete_recipe(self, recipe_id: str) -> None:
         self.recipe_repo.delete(recipe_id)
 
     @staticmethod

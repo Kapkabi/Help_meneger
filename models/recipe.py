@@ -22,7 +22,7 @@ class RecipeIngredient:
 
 @dataclass
 class Recipe:
-    id: Optional[int]
+    id: Optional[str]
     title: str
     steps: str
     cook_time_minutes: int = 0

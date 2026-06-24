@@ -1,6 +1,7 @@
 """Data-access layer. All SQL lives here; UI and core/ never write SQL directly."""
 
 import sqlite3
+import uuid
 from typing import List, Optional
 
 from core.exceptions import RepositoryError, ValidationError
@@ -107,15 +108,16 @@ class RecipeRepository:
         self.ingredients = IngredientRepository(db)
         self.units = UnitRepository(db)
 
-    def create(self, recipe: Recipe) -> int:
+    def create(self, recipe: Recipe) -> str:
+        recipe_id = recipe.id or str(uuid.uuid4())
         try:
             with self.db.transaction() as conn:
-                cursor = conn.execute(
-                    """INSERT INTO recipes (title, steps, cook_time_minutes, category_id, photo_path)
-                       VALUES (?, ?, ?, ?, ?)""",
-                    (recipe.title, recipe.steps, recipe.cook_time_minutes, recipe.category_id, recipe.photo_path),
+                conn.execute(
+                    """INSERT INTO recipes (id, title, steps, cook_time_minutes, category_id, photo_path)
+                       VALUES (?, ?, ?, ?, ?, ?)""",
+                    (recipe_id, recipe.title, recipe.steps, recipe.cook_time_minutes,
+                     recipe.category_id, recipe.photo_path),
                 )
-                recipe_id = cursor.lastrowid
                 self._save_ingredients(conn, recipe_id, recipe.ingredients)
             return recipe_id
         except sqlite3.Error as exc:
@@ -139,7 +141,7 @@ class RecipeRepository:
         except sqlite3.Error as exc:
             raise RepositoryError(f"Не удалось обновить рецепт: {exc}") from exc
 
-    def delete(self, recipe_id: int) -> None:
+    def delete(self, recipe_id: str) -> None:
         try:
             with self.db.transaction() as conn:
                 cursor = conn.execute("DELETE FROM recipes WHERE id = ?", (recipe_id,))
@@ -148,7 +150,7 @@ class RecipeRepository:
         except sqlite3.Error as exc:
             raise RepositoryError(f"Не удалось удалить рецепт: {exc}") from exc
 
-    def get_by_id(self, recipe_id: int) -> Optional[Recipe]:
+    def get_by_id(self, recipe_id: str) -> Optional[Recipe]:
         try:
             row = self.db.connection.execute(
                 """SELECT r.*, c.name AS category_name FROM recipes r
@@ -200,7 +202,7 @@ class RecipeRepository:
             raise RepositoryError(f"Ошибка поиска рецептов: {exc}") from exc
         return [self._row_to_recipe(row, self._load_ingredients(row["id"])) for row in rows]
 
-    def _save_ingredients(self, conn: sqlite3.Connection, recipe_id: int, ingredients: List[RecipeIngredient]) -> None:
+    def _save_ingredients(self, conn: sqlite3.Connection, recipe_id: str, ingredients: List[RecipeIngredient]) -> None:
         conn.execute("DELETE FROM recipe_ingredients WHERE recipe_id = ?", (recipe_id,))
         for order, ingredient in enumerate(ingredients):
             ingredient_id = self.ingredients.get_or_create(ingredient.name, conn=conn)
@@ -212,7 +214,7 @@ class RecipeRepository:
                 (recipe_id, ingredient_id, ingredient.quantity, ingredient.unit, order),
             )
 
-    def _load_ingredients(self, recipe_id: int) -> List[RecipeIngredient]:
+    def _load_ingredients(self, recipe_id: str) -> List[RecipeIngredient]:
         rows = self.db.connection.execute(
             """SELECT ri.id, ri.ingredient_id, i.name, ri.quantity, ri.unit
                FROM recipe_ingredients ri

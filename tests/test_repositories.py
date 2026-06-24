@@ -1,3 +1,5 @@
+import uuid
+
 import pytest
 
 from core.exceptions import RepositoryError, ValidationError
@@ -28,6 +30,20 @@ def test_create_and_get_recipe(recipe_repo):
     assert {i.name for i in fetched.ingredients} == {"Яйца", "Молоко"}
 
 
+def test_create_recipe_id_is_a_uuid_string(recipe_repo):
+    recipe_id = recipe_repo.create(make_recipe())
+
+    assert isinstance(recipe_id, str)
+    assert uuid.UUID(recipe_id)  # raises ValueError if not a valid UUID
+
+
+def test_create_recipe_ids_are_unique_across_offline_creates(recipe_repo):
+    first_id = recipe_repo.create(make_recipe(title="Рецепт А"))
+    second_id = recipe_repo.create(make_recipe(title="Рецепт Б"))
+
+    assert first_id != second_id
+
+
 def test_update_recipe_replaces_ingredients(recipe_repo):
     recipe_id = recipe_repo.create(make_recipe())
     recipe = recipe_repo.get_by_id(recipe_id)
@@ -44,7 +60,7 @@ def test_update_recipe_replaces_ingredients(recipe_repo):
 
 def test_update_missing_recipe_raises(recipe_repo):
     ghost = make_recipe()
-    ghost.id = 9999
+    ghost.id = "00000000-0000-0000-0000-000000000000"
     with pytest.raises(RepositoryError):
         recipe_repo.update(ghost)
 
@@ -62,7 +78,7 @@ def test_delete_recipe_removes_it_and_its_ingredients(db, recipe_repo):
 
 def test_delete_missing_recipe_raises(recipe_repo):
     with pytest.raises(RepositoryError):
-        recipe_repo.delete(9999)
+        recipe_repo.delete("00000000-0000-0000-0000-000000000000")
 
 
 def test_search_by_title(recipe_repo):

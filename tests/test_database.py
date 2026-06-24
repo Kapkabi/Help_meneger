@@ -37,6 +37,17 @@ def test_recipes_have_is_synced_column(db):
     assert "is_synced" in columns
 
 
+def test_recipes_id_is_text_uuid_not_autoincrement_integer(db):
+    columns = {row[1]: row[2] for row in db.connection.execute("PRAGMA table_info(recipes)")}
+    assert columns["id"] == "TEXT"
+
+
+def test_recipe_fk_tables_use_text_recipe_id(db):
+    for table in ("recipe_ingredients", "recipe_tags", "ratings", "recipe_history"):
+        columns = {row[1]: row[2] for row in db.connection.execute(f"PRAGMA table_info({table})")}
+        assert columns["recipe_id"] == "TEXT", f"{table}.recipe_id should be TEXT"
+
+
 def test_builtin_categories_seeded(db):
     names = {row[0] for row in db.connection.execute("SELECT name FROM categories")}
     assert {"Завтрак", "Обед", "Ужин", "Десерт", "Другое"}.issubset(names)
