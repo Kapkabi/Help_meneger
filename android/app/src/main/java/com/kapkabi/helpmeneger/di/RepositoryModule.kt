@@ -1,9 +1,11 @@
 package com.kapkabi.helpmeneger.di
 
 import com.kapkabi.helpmeneger.data.repository.RoomCategoryRepository
+import com.kapkabi.helpmeneger.data.repository.RoomIngredientRepository
 import com.kapkabi.helpmeneger.data.repository.RoomRecipeRepository
 import com.kapkabi.helpmeneger.data.repository.RoomUnitRepository
 import com.kapkabi.helpmeneger.domain.repository.CategoryRepository
+import com.kapkabi.helpmeneger.domain.repository.IngredientRepository
 import com.kapkabi.helpmeneger.domain.repository.RecipeRepository
 import com.kapkabi.helpmeneger.domain.repository.UnitRepository
 import dagger.Binds
@@ -33,4 +35,8 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindUnitRepository(impl: RoomUnitRepository): UnitRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindIngredientRepository(impl: RoomIngredientRepository): IngredientRepository
 }

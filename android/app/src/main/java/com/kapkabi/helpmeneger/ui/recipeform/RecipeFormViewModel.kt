@@ -7,6 +7,7 @@ import com.kapkabi.helpmeneger.domain.model.Category
 import com.kapkabi.helpmeneger.domain.model.Recipe
 import com.kapkabi.helpmeneger.domain.model.RecipeIngredient
 import com.kapkabi.helpmeneger.domain.repository.CategoryRepository
+import com.kapkabi.helpmeneger.domain.repository.IngredientRepository
 import com.kapkabi.helpmeneger.domain.repository.RecipeRepository
 import com.kapkabi.helpmeneger.domain.repository.UnitRepository
 import com.kapkabi.helpmeneger.ui.navigation.Routes
@@ -38,6 +39,7 @@ data class RecipeFormUiState(
     val ingredients: List<IngredientFormRow> = listOf(IngredientFormRow()),
     val categories: List<Category> = emptyList(),
     val unitSuggestions: List<String> = emptyList(),
+    val ingredientSuggestions: List<String> = emptyList(),
     val isSaved: Boolean = false,
 )
 
@@ -46,6 +48,7 @@ class RecipeFormViewModel @Inject constructor(
     private val recipeRepository: RecipeRepository,
     private val categoryRepository: CategoryRepository,
     private val unitRepository: UnitRepository,
+    private val ingredientRepository: IngredientRepository,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
@@ -57,8 +60,13 @@ class RecipeFormViewModel @Inject constructor(
         form,
         categoryRepository.observeCategories(),
         unitRepository.observeUnits(),
-    ) { state, categories, units ->
-        state.copy(categories = categories, unitSuggestions = units.map { it.name })
+        ingredientRepository.observeIngredients(),
+    ) { state, categories, units, ingredients ->
+        state.copy(
+            categories = categories,
+            unitSuggestions = units.map { it.name },
+            ingredientSuggestions = ingredients,
+        )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), RecipeFormUiState())
 
     init {

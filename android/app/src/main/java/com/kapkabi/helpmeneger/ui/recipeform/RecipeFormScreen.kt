@@ -21,7 +21,10 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Photo
 import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -34,6 +37,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -127,6 +133,8 @@ fun RecipeFormScreen(
             items(state.ingredients, key = { it.key }) { row ->
                 IngredientFormFields(
                     row = row,
+                    unitSuggestions = state.unitSuggestions,
+                    ingredientSuggestions = state.ingredientSuggestions,
                     onChange = { name, quantity, unit -> viewModel.onIngredientChange(row.key, name, quantity, unit) },
                     onRemove = { viewModel.removeIngredientRow(row.key) },
                 )
@@ -141,7 +149,7 @@ fun RecipeFormScreen(
                     value = state.steps,
                     onValueChange = viewModel::onStepsChange,
                     label = { Text("Приготовление") },
-                    modifier = Modifier.fillMaxWidth().height(160.dp),
+                    modifier = Modifier.fillMaxWidth().height(96.dp),
                 )
             }
             item {
@@ -153,35 +161,92 @@ fun RecipeFormScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun IngredientFormFields(
     row: IngredientFormRow,
+    unitSuggestions: List<String>,
+    ingredientSuggestions: List<String>,
     onChange: (name: String, quantity: String, unit: String) -> Unit,
     onRemove: () -> Unit,
 ) {
-    Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-        OutlinedTextField(
-            value = row.name,
-            onValueChange = { onChange(it, row.quantity, row.unit) },
-            label = { Text("Ингредиент") },
-            modifier = Modifier.weight(2f),
-        )
-        Spacer(modifier = Modifier.size(8.dp))
-        OutlinedTextField(
-            value = row.quantity,
-            onValueChange = { onChange(row.name, it, row.unit) },
-            label = { Text("Кол-во") },
-            modifier = Modifier.weight(1f),
-        )
-        Spacer(modifier = Modifier.size(8.dp))
-        OutlinedTextField(
-            value = row.unit,
-            onValueChange = { onChange(row.name, row.quantity, it) },
-            label = { Text("Ед.") },
-            modifier = Modifier.weight(1f),
-        )
-        IconButton(onClick = onRemove) {
-            Icon(Icons.Filled.Delete, contentDescription = "Удалить ингредиент")
+    var unitMenuExpanded by remember { mutableStateOf(false) }
+    var ingredientMenuExpanded by remember { mutableStateOf(false) }
+
+    Column {
+        Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+            ExposedDropdownMenuBox(
+                expanded = ingredientMenuExpanded,
+                onExpandedChange = { ingredientMenuExpanded = it },
+                modifier = Modifier.weight(1f),
+            ) {
+                OutlinedTextField(
+                    value = row.name,
+                    onValueChange = { onChange(it, row.quantity, row.unit) },
+                    label = { Text("Ингредиент") },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = ingredientMenuExpanded) },
+                    modifier = Modifier.menuAnchor().fillMaxWidth(),
+                )
+                if (ingredientSuggestions.isNotEmpty()) {
+                    ExposedDropdownMenu(
+                        expanded = ingredientMenuExpanded,
+                        onDismissRequest = { ingredientMenuExpanded = false },
+                    ) {
+                        ingredientSuggestions.forEach { ingredient ->
+                            DropdownMenuItem(
+                                text = { Text(ingredient) },
+                                onClick = {
+                                    onChange(ingredient, row.quantity, row.unit)
+                                    ingredientMenuExpanded = false
+                                },
+                                contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding,
+                            )
+                        }
+                    }
+                }
+            }
+            IconButton(onClick = onRemove) {
+                Icon(Icons.Filled.Delete, contentDescription = "Удалить ингредиент")
+            }
+        }
+        Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+            OutlinedTextField(
+                value = row.quantity,
+                onValueChange = { onChange(row.name, it, row.unit) },
+                label = { Text("Кол-во") },
+                modifier = Modifier.weight(1f),
+            )
+            Spacer(modifier = Modifier.size(8.dp))
+            ExposedDropdownMenuBox(
+                expanded = unitMenuExpanded,
+                onExpandedChange = { unitMenuExpanded = it },
+                modifier = Modifier.weight(1f),
+            ) {
+                OutlinedTextField(
+                    value = row.unit,
+                    onValueChange = { onChange(row.name, row.quantity, it) },
+                    label = { Text("Ед. изм.") },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = unitMenuExpanded) },
+                    modifier = Modifier.menuAnchor(),
+                )
+                if (unitSuggestions.isNotEmpty()) {
+                    ExposedDropdownMenu(
+                        expanded = unitMenuExpanded,
+                        onDismissRequest = { unitMenuExpanded = false },
+                    ) {
+                        unitSuggestions.forEach { unit ->
+                            DropdownMenuItem(
+                                text = { Text(unit) },
+                                onClick = {
+                                    onChange(row.name, row.quantity, unit)
+                                    unitMenuExpanded = false
+                                },
+                                contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding,
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }
